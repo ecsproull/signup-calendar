@@ -15,7 +15,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Define plugin constants
-define('SIGNUP_CALENDAR_VERSION', '1.0.0');
+define('SIGNUP_CALENDAR_VERSION', '1.0.1');
 define('SIGNUP_CALENDAR_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('SIGNUP_CALENDAR_PLUGIN_URL', plugin_dir_url(__FILE__));
 
@@ -37,7 +37,7 @@ function signup_calendar_render_block($attributes) {
     // Enqueue frontend assets
     wp_enqueue_style(
         'signup-calendar-frontend',
-        SIGNUP_CALENDAR_PLUGIN_URL . 'build/index.css',
+        SIGNUP_CALENDAR_PLUGIN_URL . 'build/style-index.css',
         array(),
         SIGNUP_CALENDAR_VERSION
     );
@@ -84,7 +84,7 @@ function signup_calendar_enqueue_block_editor_assets() {
 
     wp_enqueue_style(
         'signup-calendar-editor',
-        SIGNUP_CALENDAR_PLUGIN_URL . 'build/index.css',
+        SIGNUP_CALENDAR_PLUGIN_URL . 'build/style-index.css',
         array('wp-edit-blocks'),
         SIGNUP_CALENDAR_VERSION
     );

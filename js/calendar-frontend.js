@@ -44,8 +44,7 @@ jQuery(document).ready(function($) {
             var isToday = day.toDateString() === today;
             html += '<div class="week-day ' + (isToday ? 'today' : '') + '">' +
                 '<div class="week-day-header">' +
-                    '<span class="day-name">' + dayNames[day.getDay()] + '</span>' +
-                    '<span class="day-date">' + day.getDate() + '</span>' +
+                    '<span class="day-name">' + dayNames[day.getDay()] + '-' + day.getDate() + '</span>' +
                 '</div>' +
                 '<div class="week-day-events">' +
                     '<p class="no-events">There are no events scheduled</p>' +

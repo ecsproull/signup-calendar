@@ -2,7 +2,7 @@ import { registerBlockType } from '@wordpress/blocks';
 import { useBlockProps, InspectorControls } from '@wordpress/block-editor';
 import { PanelBody, SelectControl } from '@wordpress/components';
 import { useState } from '@wordpress/element';
-import './editor.css';
+import './style.css';
 
 const WeekView = ({ currentDate, onPrevWeek, onNextWeek }) => {
     debugger;
