@@ -81,8 +81,7 @@
 }
 
 .calendar-day {
-    aspect-ratio: 1;
-    padding: 0.5rem;
+    padding: 0.1rem;
     border-right: 1px solid #dee2e6;
     border-bottom: 1px solid #dee2e6;
     background: #fff;
@@ -90,7 +89,8 @@
     flex-direction: column;
     align-items: flex-start;
     position: relative;
-    min-height: 60px;
+    min-height: 100px;
+    overflow-y: auto;  /* Changed from hidden to auto */
 }
 
 .calendar-day:nth-child(7n) {
@@ -325,6 +325,9 @@
     flex-direction: column;
     gap: 4px;
     margin-top: 4px;
+    width: 100%;
+    flex: 1;
+    /* Removed overflow and max-height - let parent handle scrolling */
 }
 
 .month-event-item {
@@ -353,7 +356,6 @@
 
 .event-list {
     margin: 0;
-    padding-left: 1.5rem;
     list-style-type: decimal;
 }
 
@@ -456,8 +458,25 @@
     background: #f8f9fa;
 }
 
+.modal-header {
+    padding: 2rem 2rem 1rem 2rem;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.modal-title {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.5rem;
+    color: #212529;
+}
+
+.modal-time {
+    font-weight: 600;
+    color: #228be6;
+    font-size: 1rem;
+}
+
 .modal-body {
-    padding: 3rem 2rem 2rem 2rem;
+    padding: 2rem;
     overflow-wrap: break-word;
     word-wrap: break-word;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;

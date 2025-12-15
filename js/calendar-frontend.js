@@ -47,7 +47,7 @@ jQuery(document).ready(function($) {
             var event = events[0];
             // Store description as base64 to avoid HTML attribute issues
             var encodedDescription = btoa(unescape(encodeURIComponent(event.description || '')));
-            return '<div class="event-item" data-description="' + encodedDescription + '">' +
+            return '<div class="event-item" data-description="' + encodedDescription + '" data-title="' + event.title + '" data-time="' + event.time + '">' +
                 '<div class="event-time">' + event.time + '</div>' +
                 '<div class="event-title">' + event.title + '</div>' +
             '</div>';
@@ -56,7 +56,7 @@ jQuery(document).ready(function($) {
         var html = '<ol class="event-list">';
         $.each(events, function(index, event) {
             var encodedDescription = btoa(unescape(encodeURIComponent(event.description || '')));
-            html += '<li class="event-item" data-description="' + encodedDescription + '">' +
+            html += '<li class="event-item" data-description="' + encodedDescription + '" data-title="' + event.title + '" data-time="' + event.time + '">' +
                 '<span class="event-time">' + event.time + '</span> ' +
                 '<span class="event-title">' + event.title + '</span>' +
             '</li>';
@@ -192,7 +192,7 @@ jQuery(document).ready(function($) {
                     $.each(dayEvents, function(index, event) {
                         // Store description as base64 to avoid HTML attribute issues
                         var encodedDescription = btoa(unescape(encodeURIComponent(event.description || '')));
-                        html += '<div class="month-event-item" data-description="' + encodedDescription + '">' +
+                        html += '<div class="month-event-item" data-description="' + encodedDescription + '" data-title="' + event.title + '" data-time="' + event.time + '">' +
                             '<div class="event-time">' + event.time + '</div>' +
                             '<div class="event-title">' + event.title + '</div>' +
                         '</div>';
@@ -231,10 +231,13 @@ jQuery(document).ready(function($) {
             e.stopPropagation();
             
             var encodedDescription = $(this).data('description');
+            var title = $(this).data('title');
+            var time = $(this).data('time');
+            
             if (encodedDescription) {
                 // Decode from base64
                 var description = decodeURIComponent(escape(atob(encodedDescription)));
-                showEventModal(description);
+                showEventModal(title, time, description);
             }
             
             return false;
@@ -258,7 +261,7 @@ jQuery(document).ready(function($) {
     /**
      * Show event modal
      */
-    function showEventModal(content) {
+    function showEventModal(title, time, content) {
         // Remove existing modal
         $('#signup-calendar-modal').remove();
         
@@ -266,6 +269,10 @@ jQuery(document).ready(function($) {
             '<div class="modal-overlay"></div>' +
             '<div class="modal-content">' +
                 '<button class="modal-close">&times;</button>' +
+                '<div class="modal-header">' +
+                    '<h2 class="modal-title">' + title + '</h2>' +
+                    '<div class="modal-time">' + time + '</div>' +
+                '</div>' +
                 '<div class="modal-body">' + content + '</div>' +
             '</div>' +
         '</div>');
