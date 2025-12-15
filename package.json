@@ -1,0 +1,21 @@
+{
+  "name": "signup-calendar",
+  "version": "1.0.0",
+  "description": "A Gutenberg block for displaying signup calendars",
+  "scripts": {
+    "build": "wp-scripts build",
+    "start": "wp-scripts start",
+    "format": "wp-scripts format",
+    "lint:css": "wp-scripts lint-style",
+    "lint:js": "wp-scripts lint-js",
+    "packages-update": "wp-scripts packages-update"
+  },
+  "devDependencies": {
+    "@wordpress/scripts": "^31.1.0"
+  },
+  "keywords": [
+    "wordpress",
+    "gutenberg",
+    "block"
+  ]
+}

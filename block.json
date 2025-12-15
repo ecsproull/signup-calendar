@@ -1,0 +1,22 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "name": "signup-calendar/calendar-block",
+  "version": "1.0.0",
+  "title": "Signup Calendar",
+  "category": "widgets",
+  "icon": "calendar-alt",
+  "description": "Display a signup calendar block",
+  "attributes": {
+    "viewType": {
+      "type": "string",
+      "default": "month"
+    }
+  },
+  "supports": {
+    "html": false
+  },
+  "textdomain": "signup-calendar",
+  "editorScript": "file:./build/index.js",
+  "style": "file:./build/index.css"
+}
