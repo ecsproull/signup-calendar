@@ -3,6 +3,68 @@ jQuery(document).ready(function($) {
     
     var monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     var dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    var eventCache = {}; // Cache events by 'YYYY-MM' key
+    
+    /**
+     * Load events for a specific month
+     */
+    function loadEvents(year, month, viewType) {
+        var key = year + '-' + String(month).padStart(2, '0');
+        
+        if (eventCache[key]) {
+            console.log('Signup Calendar: Using cached events for ' + key);
+            return Promise.resolve(eventCache[key]);
+        }
+        
+        console.log('Signup Calendar: Fetching events for ' + key);
+        return $.ajax({
+            url: '/wp-json/signup-calendar/v1/events',
+            method: 'GET',
+            data: {
+                year: year,
+                month: month,
+                view: viewType || 'month'
+            }
+        }).then(function(data) {
+            eventCache[key] = data;
+            console.log('Signup Calendar: Cached ' + Object.keys(data).length + ' days of events');
+            return data;
+        }).fail(function(error) {
+            console.error('Signup Calendar: Failed to load events', error);
+            return {};
+        });
+    }
+    
+    /**
+     * Format event list HTML
+     */
+    function formatEventList(events) {
+        if (!events || events.length === 0) {
+            return '<p class="no-events">There are no events scheduled</p>';
+        }
+        
+        if (events.length === 1) {
+            var event = events[0];
+            // Store description as base64 to avoid HTML attribute issues
+            var encodedDescription = btoa(unescape(encodeURIComponent(event.description || '')));
+            return '<div class="event-item" data-description="' + encodedDescription + '">' +
+                '<div class="event-time">' + event.time + '</div>' +
+                '<div class="event-title">' + event.title + '</div>' +
+            '</div>';
+        }
+        
+        var html = '<ol class="event-list">';
+        $.each(events, function(index, event) {
+            var encodedDescription = btoa(unescape(encodeURIComponent(event.description || '')));
+            html += '<li class="event-item" data-description="' + encodedDescription + '">' +
+                '<span class="event-time">' + event.time + '</span> ' +
+                '<span class="event-title">' + event.title + '</span>' +
+            '</li>';
+        });
+        html += '</ol>';
+        
+        return html;
+    }
     
     function renderWeekView(container, date) {
         var $container = $(container);
@@ -28,43 +90,52 @@ jQuery(document).ready(function($) {
         
         var today = new Date().toDateString();
         
-        var html = '<div class="signup-calendar-container week-view">' +
-            '<div class="calendar-header">' +
-                '<button class="nav-button prev-week" aria-label="Previous week">' +
-                    '<span class="chevron left">‹</span>' +
-                '</button>' +
-                '<h3 class="month-year week-range">' + dateRange + '</h3>' +
-                '<button class="nav-button next-week" aria-label="Next week">' +
-                    '<span class="chevron right">›</span>' +
-                '</button>' +
-            '</div>' +
-            '<div class="week-grid">';
-        
-        $.each(weekDays, function(index, day) {
-            var isToday = day.toDateString() === today;
-            html += '<div class="week-day ' + (isToday ? 'today' : '') + '">' +
-                '<div class="week-day-header">' +
-                    '<span class="day-name">' + dayNames[day.getDay()] + '-' + day.getDate() + '</span>' +
+        // Load events for the month
+        loadEvents(firstDay.getFullYear(), firstDay.getMonth() + 1, 'week').then(function(eventsData) {
+            var html = '<div class="signup-calendar-container week-view">' +
+                '<div class="calendar-header">' +
+                    '<button class="nav-button prev-week" aria-label="Previous week">' +
+                        '<span class="chevron left">‹</span>' +
+                    '</button>' +
+                    '<h3 class="month-year week-range">' + dateRange + '</h3>' +
+                    '<button class="nav-button next-week" aria-label="Next week">' +
+                        '<span class="chevron right">›</span>' +
+                    '</button>' +
                 '</div>' +
-                '<div class="week-day-events">' +
-                    '<p class="no-events">There are no events scheduled</p>' +
-                '</div>' +
-            '</div>';
-        });
-        
-        html += '</div></div>';
-        
-        $container.html(html);
-        
-        // Add event listeners
-        $container.find('.prev-week').on('click', function() {
-            date.setDate(date.getDate() - 7);
-            renderWeekView(container, date);
-        });
-        
-        $container.find('.next-week').on('click', function() {
-            date.setDate(date.getDate() + 7);
-            renderWeekView(container, date);
+                '<div class="week-grid">';
+            
+            $.each(weekDays, function(index, day) {
+                var isToday = day.toDateString() === today;
+                var dateKey = day.getFullYear() + '-' + 
+                              String(day.getMonth() + 1).padStart(2, '0') + '-' + 
+                              String(day.getDate()).padStart(2, '0');
+                var dayEvents = eventsData[dateKey] || [];
+                
+                html += '<div class="week-day ' + (isToday ? 'today' : '') + '" data-date="' + dateKey + '">' +
+                    '<div class="week-day-header">' +
+                        '<span class="day-name">' + dayNames[day.getDay()] + '-' + day.getDate() + '</span>' +
+                    '</div>' +
+                    '<div class="week-day-events">' +
+                        formatEventList(dayEvents) +
+                    '</div>' +
+                '</div>';
+            });
+            
+            html += '</div></div>';
+            
+            $container.html(html);
+            attachEventHandlers($container);
+            
+            // Add navigation listeners
+            $container.find('.prev-week').on('click', function() {
+                date.setDate(date.getDate() - 7);
+                renderWeekView(container, date);
+            });
+            
+            $container.find('.next-week').on('click', function() {
+                date.setDate(date.getDate() + 7);
+                renderWeekView(container, date);
+            });
         });
     }
     
@@ -77,52 +148,148 @@ jQuery(document).ready(function($) {
         var firstDay = new Date(year, month, 1).getDay();
         var daysInMonth = new Date(year, month + 1, 0).getDate();
         
-        var html = '<div class="signup-calendar-container">' +
-            '<div class="calendar-header">' +
-                '<button class="nav-button prev-month" aria-label="Previous month">' +
-                    '<span class="chevron left">‹</span>' +
-                '</button>' +
-                '<h3 class="month-year">' + monthNames[month] + ' ' + year + '</h3>' +
-                '<button class="nav-button next-month" aria-label="Next month">' +
-                    '<span class="chevron right">›</span>' +
-                '</button>' +
+        // Load events for the month
+        loadEvents(year, month + 1, 'month').then(function(eventsData) {
+            var html = '<div class="signup-calendar-container">' +
+                '<div class="calendar-header">' +
+                    '<button class="nav-button prev-month" aria-label="Previous month">' +
+                        '<span class="chevron left">‹</span>' +
+                    '</button>' +
+                    '<h3 class="month-year">' + monthNames[month] + ' ' + year + '</h3>' +
+                    '<button class="nav-button next-month" aria-label="Next month">' +
+                        '<span class="chevron right">›</span>' +
+                    '</button>' +
+                '</div>' +
+                '<div class="calendar-weekdays">';
+            
+            $.each(dayNames, function(index, day) {
+                html += '<div class="weekday-name">' + day + '</div>';
+            });
+            
+            html += '</div><div class="calendar-grid">';
+            
+            // Empty cells for days before month starts
+            for (var i = 0; i < firstDay; i++) {
+                html += '<div class="calendar-day empty"></div>';
+            }
+            
+            // Days of the month
+            var today = new Date();
+            for (var day = 1; day <= daysInMonth; day++) {
+                var isToday = today.toDateString() === new Date(year, month, day).toDateString();
+                var dateKey = year + '-' + 
+                              String(month + 1).padStart(2, '0') + '-' + 
+                              String(day).padStart(2, '0');
+                var dayEvents = eventsData[dateKey] || [];
+                var hasEvents = dayEvents.length > 0;
+                
+                html += '<div class="calendar-day ' + (isToday ? 'today' : '') + 
+                        (hasEvents ? ' has-events' : '') + '" data-date="' + dateKey + '">' +
+                    '<span class="day-number">' + day + '</span>';
+                
+                if (hasEvents) {
+                    html += '<div class="day-events">';
+                    $.each(dayEvents, function(index, event) {
+                        // Store description as base64 to avoid HTML attribute issues
+                        var encodedDescription = btoa(unescape(encodeURIComponent(event.description || '')));
+                        html += '<div class="month-event-item" data-description="' + encodedDescription + '">' +
+                            '<div class="event-time">' + event.time + '</div>' +
+                            '<div class="event-title">' + event.title + '</div>' +
+                        '</div>';
+                    });
+                    html += '</div>';
+                }
+                
+                html += '</div>';
+            }
+            
+            html += '</div></div>';
+            
+            $container.html(html);
+            attachEventHandlers($container);
+            
+            // Add navigation listeners
+            $container.find('.prev-month').on('click', function() {
+                date.setMonth(date.getMonth() - 1);
+                renderCalendar(container, date);
+            });
+            
+            $container.find('.next-month').on('click', function() {
+                date.setMonth(date.getMonth() + 1);
+                renderCalendar(container, date);
+            });
+        });
+    }
+    
+    /**
+     * Attach event handlers
+     */
+    function attachEventHandlers($container) {
+        // Left-click on events to show description
+        $container.on('click', '.event-item, .month-event-item', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            var encodedDescription = $(this).data('description');
+            if (encodedDescription) {
+                // Decode from base64
+                var description = decodeURIComponent(escape(atob(encodedDescription)));
+                showEventModal(description);
+            }
+            
+            return false;
+        });
+    }
+    
+    /**
+     * Get events for a specific date from cache
+     */
+    function getEventsForDate(dateKey) {
+        var parts = dateKey.split('-');
+        var cacheKey = parts[0] + '-' + parts[1];
+        
+        if (eventCache[cacheKey] && eventCache[cacheKey][dateKey]) {
+            return eventCache[cacheKey][dateKey];
+        }
+        
+        return null;
+    }
+    
+    /**
+     * Show event modal
+     */
+    function showEventModal(content) {
+        // Remove existing modal
+        $('#signup-calendar-modal').remove();
+        
+        var modal = $('<div id="signup-calendar-modal" class="signup-calendar-modal">' +
+            '<div class="modal-overlay"></div>' +
+            '<div class="modal-content">' +
+                '<button class="modal-close">&times;</button>' +
+                '<div class="modal-body">' + content + '</div>' +
             '</div>' +
-            '<div class="calendar-weekdays">';
+        '</div>');
         
-        $.each(dayNames, function(index, day) {
-            html += '<div class="weekday-name">' + day + '</div>';
+        $('body').append(modal);
+        
+        // Close on overlay click or close button
+        modal.find('.modal-overlay, .modal-close').on('click', function() {
+            modal.fadeOut(200, function() {
+                modal.remove();
+            });
         });
         
-        html += '</div><div class="calendar-grid">';
-        
-        // Empty cells for days before month starts
-        for (var i = 0; i < firstDay; i++) {
-            html += '<div class="calendar-day empty"></div>';
-        }
-        
-        // Days of the month
-        var today = new Date();
-        for (var day = 1; day <= daysInMonth; day++) {
-            var isToday = today.toDateString() === new Date(year, month, day).toDateString();
-            html += '<div class="calendar-day ' + (isToday ? 'today' : '') + '">' +
-                '<span class="day-number">' + day + '</span>' +
-            '</div>';
-        }
-        
-        html += '</div></div>';
-        
-        $container.html(html);
-        
-        // Add event listeners
-        $container.find('.prev-month').on('click', function() {
-            date.setMonth(date.getMonth() - 1);
-            renderCalendar(container, date);
+        // Close on ESC key
+        $(document).on('keydown.signupCalendar', function(e) {
+            if (e.key === 'Escape') {
+                modal.fadeOut(200, function() {
+                    modal.remove();
+                });
+                $(document).off('keydown.signupCalendar');
+            }
         });
         
-        $container.find('.next-month').on('click', function() {
-            date.setMonth(date.getMonth() + 1);
-            renderCalendar(container, date);
-        });
+        modal.fadeIn(200);
     }
     
     // Initialize all calendar blocks on the page
