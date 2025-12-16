@@ -1,0 +1,67 @@
+/* Admin styles for Calendar Events */
+.signup-calendar-admin-page {
+    max-width: 1200px;
+}
+
+#signup-calendar-event-form .form-table th {
+    width: 180px;
+}
+
+#repeat-dates-preview {
+    border: 1px solid #ddd;
+}
+
+#dates-list .date-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.edit-date-input {
+    padding: 4px 8px;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+}
+
+.datepicker {
+    cursor: pointer;
+}
+
+/* jQuery UI Datepicker styling */
+.ui-datepicker {
+    font-size: 14px;
+}
+
+.ui-datepicker .ui-datepicker-header {
+    background: #2271b1;
+    color: white;
+    border: none;
+}
+
+.ui-datepicker .ui-datepicker-title {
+    color: white;
+}
+
+.ui-datepicker .ui-datepicker-prev,
+.ui-datepicker .ui-datepicker-next {
+    cursor: pointer;
+}
+
+.ui-datepicker td {
+    padding: 2px;
+}
+
+.ui-datepicker td a {
+    text-align: center;
+    padding: 4px;
+    display: block;
+}
+
+.ui-datepicker td .ui-state-active {
+    background: #2271b1;
+    color: white;
+}
+
+.ui-datepicker td .ui-state-hover {
+    background: #f0f0f0;
+}
