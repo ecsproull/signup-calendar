@@ -48,7 +48,6 @@ jQuery(document).ready(function($) {
             // Store description as base64 to avoid HTML attribute issues
             var encodedDescription = btoa(unescape(encodeURIComponent(event.description || '')));
             return '<div class="event-item" data-description="' + encodedDescription + '" data-title="' + event.title + '" data-time="' + event.time + '">' +
-                '<div class="event-time">' + event.time + '</div>' +
                 '<div class="event-title">' + event.title + '</div>' +
             '</div>';
         }
@@ -57,7 +56,6 @@ jQuery(document).ready(function($) {
         $.each(events, function(index, event) {
             var encodedDescription = btoa(unescape(encodeURIComponent(event.description || '')));
             html += '<li class="event-item" data-description="' + encodedDescription + '" data-title="' + event.title + '" data-time="' + event.time + '">' +
-                '<span class="event-time">' + event.time + '</span> ' +
                 '<span class="event-title">' + event.title + '</span>' +
             '</li>';
         });

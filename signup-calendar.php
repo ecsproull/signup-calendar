@@ -233,6 +233,11 @@ function signup_calendar_admin_assets($hook) {
         SIGNUP_CALENDAR_VERSION,
         true
     );
+    
+    wp_localize_script('signup-calendar-admin', 'signupCalendarAdmin', array(
+        'ajaxurl' => admin_url('admin-ajax.php'),
+        'nonce' => wp_create_nonce('signup_calendar_admin')
+    ));
 }
 add_action('admin_enqueue_scripts', 'signup_calendar_admin_assets');
 
@@ -350,6 +355,31 @@ function signup_calendar_process_event_submission() {
     
     $table_name = $wpdb->prefix . 'spidercalendar_event';
     
+    // Check if this is an update
+    if (isset($_POST['event_id']) && !empty($_POST['event_id'])) {
+        $event_id = intval($_POST['event_id']);
+        
+        $result = $wpdb->update(
+            $table_name,
+            array(
+                'title' => $title,
+                'date' => $date,
+                'time' => $time,
+                'text_for_date' => $description
+            ),
+            array('id' => $event_id),
+            array('%s', '%s', '%s', '%s'),
+            array('%d')
+        );
+        
+        if ($result !== false) {
+            echo '<div class="notice notice-success is-dismissible"><p>Event updated successfully</p></div>';
+        } else {
+            echo '<div class="notice notice-error is-dismissible"><p>Failed to update event</p></div>';
+        }
+        return;
+    }
+    
     // Calculate all dates to insert
     $dates_to_insert = array();
     $start_date = DateTime::createFromFormat('Y-m-d', $date);
@@ -456,16 +486,65 @@ function signup_calendar_display_recent_events() {
     echo '<tbody>';
     
     foreach ($events as $event) {
-        echo '<tr>';
+        // Parse time range back to start/end times for editing
+        $time_parts = explode('-', $event['time']);
+        $start_time = '';
+        $end_time = '';
+        if (count($time_parts) === 2) {
+            $start_time = date('H:i', strtotime($time_parts[0]));
+            $end_time = date('H:i', strtotime($time_parts[1]));
+        }
+        
+        $event_data = array(
+            'id' => $event['id'],
+            'title' => $event['title'],
+            'date' => $event['date'],
+            'start_time' => $start_time,
+            'end_time' => $end_time,
+            'description' => $event['text_for_date']
+        );
+        
+        echo '<tr data-event="' . esc_attr(json_encode($event_data)) . '">';
         echo '<td>' . esc_html($event['date']) . '</td>';
         echo '<td>' . esc_html($event['time']) . '</td>';
         echo '<td>' . esc_html($event['title']) . '</td>';
-        echo '<td><a href="#" class="button button-small">Edit</a> <a href="#" class="button button-small">Delete</a></td>';
+        echo '<td>';
+        echo '<button class="button button-small edit-event-btn" data-event-id="' . esc_attr($event['id']) . '">Edit</button> ';
+        echo '<button class="button button-small delete-event-btn" data-event-id="' . esc_attr($event['id']) . '">Delete</button>';
+        echo '</td>';
         echo '</tr>';
     }
     
     echo '</tbody></table>';
 }
+
+/**
+ * Handle delete event AJAX request
+ */
+function signup_calendar_delete_event() {
+    check_ajax_referer('signup_calendar_admin', 'nonce');
+    
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error('Insufficient permissions');
+    }
+    
+    global $wpdb;
+    $event_id = intval($_POST['event_id']);
+    $table_name = $wpdb->prefix . 'spidercalendar_event';
+    
+    $result = $wpdb->delete(
+        $table_name,
+        array('id' => $event_id),
+        array('%d')
+    );
+    
+    if ($result) {
+        wp_send_json_success('Event deleted successfully');
+    } else {
+        wp_send_json_error('Failed to delete event');
+    }
+}
+add_action('wp_ajax_signup_calendar_delete_event', 'signup_calendar_delete_event');
 
 /**
  * Plugin activation hook

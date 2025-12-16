@@ -63,10 +63,84 @@ jQuery(document).ready(function($) {
         $('#repeat-dates-preview').hide();
     });
     
+    // Edit event button
+    $(document).on('click', '.edit-event-btn', function(e) {
+        e.preventDefault();
+        var $row = $(this).closest('tr');
+        var eventData = $row.data('event');
+        
+        // Populate form fields
+        $('#event_title').val(eventData.title);
+        $('#event_date').val(eventData.date);
+        $('#event_time').val(eventData.start_time);
+        $('#event_end_time').val(eventData.end_time);
+        
+        // Set the editor content
+        if (typeof tinymce !== 'undefined' && tinymce.get('event_description')) {
+            tinymce.get('event_description').setContent(eventData.description);
+        } else {
+            $('#event_description').val(eventData.description);
+        }
+        
+        // Reset repeat fields
+        $('#repeat_count').val(0);
+        $('#repeat_frequency').val('none');
+        $('#repeat-dates-preview').hide();
+        
+        // Add hidden field for event ID to update existing event
+        $('#signup-calendar-event-form input[name="event_id"]').remove();
+        $('#signup-calendar-event-form').append('<input type="hidden" name="event_id" value="' + eventData.id + '" />');
+        
+        // Scroll to form
+        $('html, body').animate({
+            scrollTop: $('#signup-calendar-event-form').offset().top - 50
+        }, 500);
+    });
+    
+    // Delete event button
+    $(document).on('click', '.delete-event-btn', function(e) {
+        e.preventDefault();
+        
+        if (!confirm('Are you sure you want to delete this event? This action cannot be undone.')) {
+            return;
+        }
+        
+        var eventId = $(this).data('event-id');
+        var $row = $(this).closest('tr');
+        var $button = $(this);
+        
+        $button.prop('disabled', true).text('Deleting...');
+        
+        $.ajax({
+            url: signupCalendarAdmin.ajaxurl,
+            type: 'POST',
+            data: {
+                action: 'signup_calendar_delete_event',
+                event_id: eventId,
+                nonce: signupCalendarAdmin.nonce
+            },
+            success: function(response) {
+                if (response.success) {
+                    $row.fadeOut(300, function() {
+                        $(this).remove();
+                    });
+                } else {
+                    alert('Error: ' + response.data);
+                    $button.prop('disabled', false).text('Delete');
+                }
+            },
+            error: function() {
+                alert('Failed to delete event. Please try again.');
+                $button.prop('disabled', false).text('Delete');
+            }
+        });
+    });
+    
     // Calculate repeating dates
     function calculateRepeatingDates(startDateStr, repeatCount, frequency) {
         var dates = [];
-        var startDate = new Date(startDateStr);
+        // Parse date correctly by adding time component to avoid timezone shift
+        var startDate = new Date(startDateStr + 'T12:00:00');
         dates.push(formatDate(startDate));
         
         if (frequency === 'weekly') {
@@ -127,7 +201,8 @@ jQuery(document).ready(function($) {
         var html = '<div style="max-height: 300px; overflow-y: auto;">';
         
         dates.forEach(function(date) {
-            var dateObj = new Date(date);
+            // Parse date correctly by adding time component to avoid timezone shift
+            var dateObj = new Date(date + 'T12:00:00');
             var dayName = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][dateObj.getDay()];
             html += '<div class="date-item" data-date="' + date + '" style="padding: 8px; margin: 4px 0; background: white; border: 1px solid #ddd; border-radius: 3px;">';
             html += '<input type="hidden" name="event_dates[]" value="' + date + '" />';
