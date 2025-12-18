@@ -183,24 +183,27 @@ jQuery(document).ready(function($) {
         var dates = [];
         // Parse date correctly by adding time component to avoid timezone shift
         var startDate = new Date(startDateStr + 'T12:00:00');
-        dates.push(formatDate(startDate));
         
-        if (frequency === 'weekly') {
-            for (var i = 1; i <= repeatCount; i++) {
+        // repeatCount represents total number of events to create
+        if (frequency === 'weekly' && repeatCount > 0) {
+            for (var i = 0; i < repeatCount; i++) {
                 var nextDate = new Date(startDate);
                 nextDate.setDate(nextDate.getDate() + (i * 7));
                 dates.push(formatDate(nextDate));
             }
-        } else if (frequency === 'monthly') {
+        } else if (frequency === 'monthly' && repeatCount > 0) {
             var dayOfWeek = startDate.getDay();
             var occurrence = Math.ceil(startDate.getDate() / 7);
             
-            for (var i = 1; i <= repeatCount; i++) {
+            for (var i = 0; i < repeatCount; i++) {
                 var nextDate = findNthDayOfWeekInMonth(startDate.getMonth() + i, startDate.getFullYear(), dayOfWeek, occurrence);
                 if (nextDate) {
                     dates.push(formatDate(nextDate));
                 }
             }
+        } else {
+            // No repeat or frequency is 'none' - just add the original date
+            dates.push(formatDate(startDate));
         }
         
         return dates;

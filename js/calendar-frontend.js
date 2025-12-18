@@ -93,6 +93,7 @@ jQuery(document).ready(function($) {
         // Load events for the month
         loadEvents(firstDay.getFullYear(), firstDay.getMonth() + 1, 'week').then(function(eventsData) {
             var html = '<div class="signup-calendar-container week-view">' +
+            '<div class="full-calendar-link"><a href="/club-event-calendar">Full Calendar</a></div>' +
                 '<div class="calendar-header">' +
                     '<button class="nav-button prev-week" aria-label="Previous week">' +
                         '<span class="chevron left">‹</span>' +

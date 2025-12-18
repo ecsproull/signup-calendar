@@ -169,10 +169,13 @@ function signup_calendar_get_events($request) {
         if (!isset($events_by_date[$date])) {
             $events_by_date[$date] = array();
         }
+        // Process shortcodes in the description
+        $description = do_shortcode($event['text_for_date']);
+        
         $events_by_date[$date][] = array(
             'title' => $event['title'],
             'time' => $event['time'],
-            'description' => $event['text_for_date'],
+            'description' => $description,
             'category' => $event['category']
         );
     }
@@ -389,17 +392,17 @@ function signup_calendar_admin_page() {
 function signup_calendar_process_event_submission() {
     global $wpdb;
     
-    $title = sanitize_text_field($_POST['event_title']);
-    $date = sanitize_text_field($_POST['event_date']);
-    $start_time = sanitize_text_field($_POST['event_time']);
-    $end_time = sanitize_text_field($_POST['event_end_time']);
-    $description = wp_kses_post($_POST['event_description']);
+    $title = sanitize_text_field(wp_unslash($_POST['event_title']));
+    $date = sanitize_text_field(wp_unslash($_POST['event_date']));
+    $start_time = sanitize_text_field(wp_unslash($_POST['event_time']));
+    $end_time = sanitize_text_field(wp_unslash($_POST['event_end_time']));
+    $description = wp_kses_post(wp_unslash($_POST['event_description']));
     $category = intval($_POST['event_category']);
     
     // Format time as range (e.g., "8:00AM-10:00AM")
     $time = signup_calendar_format_time_range($start_time, $end_time);
     $repeat_count = intval($_POST['repeat_count']);
-    $repeat_frequency = sanitize_text_field($_POST['repeat_frequency']);
+    $repeat_frequency = sanitize_text_field(wp_unslash($_POST['repeat_frequency']));
     
     $table_name = $wpdb->prefix . 'spidercalendar_event';
     
@@ -438,12 +441,10 @@ function signup_calendar_process_event_submission() {
         return;
     }
     
-    $dates_to_insert[] = $start_date->format('Y-m-d');
-    
-    // Calculate repeat dates
+    // Calculate repeat dates - repeat_count represents total number of events
     if ($repeat_count > 0 && $repeat_frequency !== 'none') {
         if ($repeat_frequency === 'weekly') {
-            for ($i = 1; $i <= $repeat_count; $i++) {
+            for ($i = 0; $i < $repeat_count; $i++) {
                 $next_date = clone $start_date;
                 $next_date->modify("+{$i} weeks");
                 $dates_to_insert[] = $next_date->format('Y-m-d');
@@ -454,7 +455,7 @@ function signup_calendar_process_event_submission() {
             $day_of_month = $start_date->format('j');
             $occurrence = ceil($day_of_month / 7); // 1st, 2nd, 3rd, 4th, or 5th occurrence
             
-            for ($i = 1; $i <= $repeat_count; $i++) {
+            for ($i = 0; $i < $repeat_count; $i++) {
                 $next_month = clone $start_date;
                 $next_month->modify("+{$i} months");
                 $next_month->modify('first day of this month');
@@ -476,6 +477,9 @@ function signup_calendar_process_event_submission() {
                 }
             }
         }
+    } else {
+        // No repeat - just add the original date
+        $dates_to_insert[] = $start_date->format('Y-m-d');
     }
     
     // Check if we have edited dates from the form
