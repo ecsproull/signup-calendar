@@ -63,6 +63,47 @@ jQuery(document).ready(function($) {
         $('#repeat-dates-preview').hide();
     });
     
+    // Apply filters button
+    $('#apply-filters-btn').on('click', function() {
+        var category = $('#filter_category').val();
+        var startDate = $('#filter_start_date').val();
+        var endDate = $('#filter_end_date').val();
+        
+        $.ajax({
+            url: signupCalendarAdmin.ajaxurl,
+            type: 'POST',
+            data: {
+                action: 'signup_calendar_fetch_filtered_events',
+                category: category,
+                start_date: startDate,
+                end_date: endDate,
+                nonce: signupCalendarAdmin.nonce
+            },
+            beforeSend: function() {
+                $('#events-list-container').html('<p>Loading events...</p>');
+            },
+            success: function(response) {
+                if (response.success) {
+                    $('#events-list-container').html(response.data.html);
+                } else {
+                    alert('Error: ' + response.data);
+                }
+            },
+            error: function() {
+                alert('Failed to fetch events. Please try again.');
+                $('#events-list-container').html('<p>Error loading events.</p>');
+            }
+        });
+    });
+    
+    // Reset filters button
+    $('#reset-filters-btn').on('click', function() {
+        $('#filter_category').val('');
+        $('#filter_start_date').val('');
+        $('#filter_end_date').val('');
+        $('#apply-filters-btn').trigger('click');
+    });
+    
     // Edit event button
     $(document).on('click', '.edit-event-btn', function(e) {
         e.preventDefault();
@@ -74,6 +115,7 @@ jQuery(document).ready(function($) {
         $('#event_date').val(eventData.date);
         $('#event_time').val(eventData.start_time);
         $('#event_end_time').val(eventData.end_time);
+        $('#event_category').val(eventData.category);
         
         // Set the editor content
         if (typeof tinymce !== 'undefined' && tinymce.get('event_description')) {

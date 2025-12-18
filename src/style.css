@@ -500,3 +500,24 @@
         padding: 2.5rem 1.5rem 1.5rem 1.5rem;
     }
 }
+
+/* Category color classes for event borders */
+.event-category-1 {
+    border-left-color: rgba(221, 190, 190, 0.5) !important;
+}
+
+.event-category-2 {
+    border-left-color: lightblue !important;
+}
+
+.event-category-4 {
+    border-left-color: lightgreen !important;
+}
+
+.event-category-7 {
+    border-left-color: #d2b48c !important; /* lightbrown - tan color */
+}
+
+.event-category-8 {
+    border-left-color: red !important;
+}

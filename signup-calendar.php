@@ -148,7 +148,7 @@ function signup_calendar_get_events($request) {
     $table_name = $wpdb->prefix . 'spidercalendar_event';
     
     $query = $wpdb->prepare(
-        "SELECT date, title, time, text_for_date 
+        "SELECT date, title, time, text_for_date, category 
         FROM {$table_name} 
         WHERE date >= %s AND date <= %s 
         ORDER BY date, time",
@@ -172,7 +172,8 @@ function signup_calendar_get_events($request) {
         $events_by_date[$date][] = array(
             'title' => $event['title'],
             'time' => $event['time'],
-            'description' => $event['text_for_date']
+            'description' => $event['text_for_date'],
+            'category' => $event['category']
         );
     }
     
@@ -303,6 +304,20 @@ function signup_calendar_admin_page() {
                 </tr>
                 
                 <tr>
+                    <th scope="row"><label for="event_category">Category *</label></th>
+                    <td>
+                        <select id="event_category" name="event_category" class="regular-text" required>
+                            <option value="1">Social Event</option>
+                            <option value="2">Meeting</option>
+                            <option value="4">Shop Activity</option>
+                            <option value="7">Class</option>
+                            <option value="8">Closed</option>
+                        </select>
+                        <p class="description">Select event category</p>
+                    </td>
+                </tr>
+                
+                <tr>
                     <th scope="row"><label for="repeat_count">Repeat</label></th>
                     <td>
                         <input type="number" id="repeat_count" name="repeat_count" min="0" max="52" value="0" style="width: 80px;" />
@@ -330,8 +345,40 @@ function signup_calendar_admin_page() {
         
         <hr style="margin: 40px 0;" />
         
-        <h2>Recent Events</h2>
-        <?php signup_calendar_display_recent_events(); ?>
+        <h2>Event Management</h2>
+        
+        <div style="background: #f9f9f9; padding: 15px; margin-bottom: 20px; border: 1px solid #ddd; border-radius: 4px;">
+            <h3 style="margin-top: 0;">Filter Events</h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; align-items: end;">
+                <div>
+                    <label for="filter_category"><strong>Category</strong></label><br>
+                    <select id="filter_category" style="width: 100%;">
+                        <option value="">All Categories</option>
+                        <option value="1">Social Events</option>
+                        <option value="2">Meetings</option>
+                        <option value="4">Shop Activities</option>
+                        <option value="7">Classes</option>
+                        <option value="8">Closed</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="filter_start_date"><strong>Start Date</strong></label><br>
+                    <input type="date" id="filter_start_date" style="width: 100%;" />
+                </div>
+                <div>
+                    <label for="filter_end_date"><strong>End Date</strong></label><br>
+                    <input type="date" id="filter_end_date" style="width: 100%;" />
+                </div>
+                <div>
+                    <button type="button" id="apply-filters-btn" class="button button-primary">Apply Filters</button>
+                    <button type="button" id="reset-filters-btn" class="button">Reset</button>
+                </div>
+            </div>
+        </div>
+        
+        <div id="events-list-container">
+            <?php signup_calendar_display_recent_events(); ?>
+        </div>
     </div>
     <?php
 }
@@ -347,6 +394,7 @@ function signup_calendar_process_event_submission() {
     $start_time = sanitize_text_field($_POST['event_time']);
     $end_time = sanitize_text_field($_POST['event_end_time']);
     $description = wp_kses_post($_POST['event_description']);
+    $category = intval($_POST['event_category']);
     
     // Format time as range (e.g., "8:00AM-10:00AM")
     $time = signup_calendar_format_time_range($start_time, $end_time);
@@ -365,10 +413,11 @@ function signup_calendar_process_event_submission() {
                 'title' => $title,
                 'date' => $date,
                 'time' => $time,
-                'text_for_date' => $description
+                'text_for_date' => $description,
+                'category' => $category
             ),
             array('id' => $event_id),
-            array('%s', '%s', '%s', '%s'),
+            array('%s', '%s', '%s', '%s', '%d'),
             array('%d')
         );
         
@@ -443,9 +492,10 @@ function signup_calendar_process_event_submission() {
                 'title' => $title,
                 'date' => $event_date,
                 'time' => $time,
-                'text_for_date' => $description
+                'text_for_date' => $description,
+                'category' => $category
             ),
-            array('%s', '%s', '%s', '%s')
+            array('%s', '%s', '%s', '%s', '%d')
         );
         
         if ($result) {
@@ -461,28 +511,24 @@ function signup_calendar_process_event_submission() {
 }
 
 /**
- * Display recent events
+ * Render events table
  */
-function signup_calendar_display_recent_events() {
-    global $wpdb;
-    
-    $table_name = $wpdb->prefix . 'spidercalendar_event';
-    
-    $events = $wpdb->get_results(
-        "SELECT * FROM {$table_name} 
-        WHERE date >= CURDATE() 
-        ORDER BY date ASC, time ASC 
-        LIMIT 20",
-        ARRAY_A
-    );
-    
+function signup_calendar_render_events_table($events) {
     if (empty($events)) {
-        echo '<p>No upcoming events found.</p>';
+        echo '<p>No events found.</p>';
         return;
     }
     
+    $category_names = array(
+        1 => 'Social Events',
+        2 => 'Meetings',
+        4 => 'Shop Activities',
+        7 => 'Classes',
+        8 => 'Closed'
+    );
+    
     echo '<table class="wp-list-table widefat fixed striped">';
-    echo '<thead><tr><th>Date</th><th>Time</th><th>Title</th><th>Actions</th></tr></thead>';
+    echo '<thead><tr><th>Date</th><th>Time</th><th>Title</th><th>Category</th><th>Actions</th></tr></thead>';
     echo '<tbody>';
     
     foreach ($events as $event) {
@@ -501,13 +547,17 @@ function signup_calendar_display_recent_events() {
             'date' => $event['date'],
             'start_time' => $start_time,
             'end_time' => $end_time,
-            'description' => $event['text_for_date']
+            'description' => $event['text_for_date'],
+            'category' => $event['category']
         );
+        
+        $category_label = isset($category_names[$event['category']]) ? $category_names[$event['category']] : 'Unknown';
         
         echo '<tr data-event="' . esc_attr(json_encode($event_data)) . '">';
         echo '<td>' . esc_html($event['date']) . '</td>';
         echo '<td>' . esc_html($event['time']) . '</td>';
         echo '<td>' . esc_html($event['title']) . '</td>';
+        echo '<td>' . esc_html($category_label) . '</td>';
         echo '<td>';
         echo '<button class="button button-small edit-event-btn" data-event-id="' . esc_attr($event['id']) . '">Edit</button> ';
         echo '<button class="button button-small delete-event-btn" data-event-id="' . esc_attr($event['id']) . '">Delete</button>';
@@ -517,6 +567,85 @@ function signup_calendar_display_recent_events() {
     
     echo '</tbody></table>';
 }
+
+/**
+ * Display recent events (default view)
+ */
+function signup_calendar_display_recent_events() {
+    global $wpdb;
+    
+    $table_name = $wpdb->prefix . 'spidercalendar_event';
+    
+    $events = $wpdb->get_results(
+        "SELECT * FROM {$table_name} 
+        WHERE date >= CURDATE() 
+        ORDER BY date ASC, time ASC 
+        LIMIT 20",
+        ARRAY_A
+    );
+    
+    signup_calendar_render_events_table($events);
+}
+
+/**
+ * Handle fetch filtered events AJAX request
+ */
+function signup_calendar_fetch_filtered_events() {
+    check_ajax_referer('signup_calendar_admin', 'nonce');
+    
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error('Insufficient permissions');
+    }
+    
+    global $wpdb;
+    $table_name = $wpdb->prefix . 'spidercalendar_event';
+    
+    $category = isset($_POST['category']) ? sanitize_text_field($_POST['category']) : '';
+    $start_date = isset($_POST['start_date']) ? sanitize_text_field($_POST['start_date']) : '';
+    $end_date = isset($_POST['end_date']) ? sanitize_text_field($_POST['end_date']) : '';
+    
+    $where_clauses = array();
+    $where_values = array();
+    
+    if ($category !== '') {
+        $where_clauses[] = 'category = %d';
+        $where_values[] = intval($category);
+    }
+    
+    if ($start_date) {
+        $where_clauses[] = 'date >= %s';
+        $where_values[] = $start_date;
+    }
+    
+    if ($end_date) {
+        $where_clauses[] = 'date <= %s';
+        $where_values[] = $end_date;
+    }
+    
+    $where_sql = '';
+    if (!empty($where_clauses)) {
+        $where_sql = 'WHERE ' . implode(' AND ', $where_clauses);
+    }
+    
+    $query = "SELECT * FROM {$table_name} {$where_sql} ORDER BY date ASC, time ASC LIMIT 100";
+    
+    if (!empty($where_values)) {
+        $query = $wpdb->prepare($query, $where_values);
+    }
+    
+    $events = $wpdb->get_results($query, ARRAY_A);
+    
+    if ($wpdb->last_error) {
+        wp_send_json_error('Database error: ' . $wpdb->last_error);
+    }
+    
+    ob_start();
+    signup_calendar_render_events_table($events);
+    $html = ob_get_clean();
+    
+    wp_send_json_success(array('html' => $html, 'count' => count($events)));
+}
+add_action('wp_ajax_signup_calendar_fetch_filtered_events', 'signup_calendar_fetch_filtered_events');
 
 /**
  * Handle delete event AJAX request

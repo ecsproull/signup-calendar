@@ -47,7 +47,8 @@ jQuery(document).ready(function($) {
             var event = events[0];
             // Store description as base64 to avoid HTML attribute issues
             var encodedDescription = btoa(unescape(encodeURIComponent(event.description || '')));
-            return '<div class="event-item" data-description="' + encodedDescription + '" data-title="' + event.title + '" data-time="' + event.time + '">' +
+            var categoryClass = event.category ? 'event-category-' + event.category : '';
+            return '<div class="event-item ' + categoryClass + '" data-description="' + encodedDescription + '" data-title="' + event.title + '" data-time="' + event.time + '">' +
                 '<div class="event-title">' + event.title + '</div>' +
             '</div>';
         }
@@ -55,7 +56,8 @@ jQuery(document).ready(function($) {
         var html = '<ol class="event-list">';
         $.each(events, function(index, event) {
             var encodedDescription = btoa(unescape(encodeURIComponent(event.description || '')));
-            html += '<li class="event-item" data-description="' + encodedDescription + '" data-title="' + event.title + '" data-time="' + event.time + '">' +
+            var categoryClass = event.category ? 'event-category-' + event.category : '';
+            html += '<li class="event-item ' + categoryClass + '" data-description="' + encodedDescription + '" data-title="' + event.title + '" data-time="' + event.time + '">' +
                 '<span class="event-title">' + event.title + '</span>' +
             '</li>';
         });
@@ -190,7 +192,8 @@ jQuery(document).ready(function($) {
                     $.each(dayEvents, function(index, event) {
                         // Store description as base64 to avoid HTML attribute issues
                         var encodedDescription = btoa(unescape(encodeURIComponent(event.description || '')));
-                        html += '<div class="month-event-item" data-description="' + encodedDescription + '" data-title="' + event.title + '" data-time="' + event.time + '">' +
+                        var categoryClass = event.category ? 'event-category-' + event.category : '';
+                        html += '<div class="month-event-item ' + categoryClass + '" data-description="' + encodedDescription + '" data-title="' + event.title + '" data-time="' + event.time + '">' +
                             '<div class="event-time">' + event.time + '</div>' +
                             '<div class="event-title">' + event.title + '</div>' +
                         '</div>';
