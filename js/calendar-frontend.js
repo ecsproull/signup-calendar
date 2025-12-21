@@ -267,6 +267,23 @@ jQuery(document).ready(function($) {
         // Remove existing modal
         $('#signup-calendar-modal').remove();
         
+        // Process content to remove target="_blank" from internal links
+        var $tempDiv = $('<div>').html(content);
+        $tempDiv.find('a').each(function() {
+            var href = $(this).attr('href');
+            if (href) {
+                // Check if the link is to one of our site locations
+                var isInternalLink = href.includes('scwwoodshop.com') || 
+                                     href.includes('edtest.site') || 
+                                     href.includes('woodclubtest.site');
+                
+                if (isInternalLink) {
+                    $(this).removeAttr('target');
+                }
+            }
+        });
+        content = $tempDiv.html();
+        
         var modal = $('<div id="signup-calendar-modal" class="signup-calendar-modal">' +
             '<div class="modal-overlay"></div>' +
             '<div class="modal-content">' +

@@ -354,6 +354,10 @@ function signup_calendar_admin_page() {
             <h3 style="margin-top: 0;">Filter Events</h3>
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; align-items: end;">
                 <div>
+                    <label for="filter_search"><strong>Search Title</strong></label><br>
+                    <input type="text" id="filter_search" placeholder="Search by title..." style="width: 100%;" />
+                </div>
+                <div>
                     <label for="filter_category"><strong>Category</strong></label><br>
                     <select id="filter_category" style="width: 100%;">
                         <option value="">All Categories</option>
@@ -604,12 +608,18 @@ function signup_calendar_fetch_filtered_events() {
     global $wpdb;
     $table_name = $wpdb->prefix . 'spidercalendar_event';
     
+    $search = isset($_POST['search']) ? sanitize_text_field(wp_unslash($_POST['search'])) : '';
     $category = isset($_POST['category']) ? sanitize_text_field($_POST['category']) : '';
     $start_date = isset($_POST['start_date']) ? sanitize_text_field($_POST['start_date']) : '';
     $end_date = isset($_POST['end_date']) ? sanitize_text_field($_POST['end_date']) : '';
     
     $where_clauses = array();
     $where_values = array();
+    
+    if ($search !== '') {
+        $where_clauses[] = 'title LIKE %s';
+        $where_values[] = '%' . $wpdb->esc_like($search) . '%';
+    }
     
     if ($category !== '') {
         $where_clauses[] = 'category = %d';

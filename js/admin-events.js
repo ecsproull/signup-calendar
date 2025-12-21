@@ -65,6 +65,7 @@ jQuery(document).ready(function($) {
     
     // Apply filters button
     $('#apply-filters-btn').on('click', function() {
+        var search = $('#filter_search').val();
         var category = $('#filter_category').val();
         var startDate = $('#filter_start_date').val();
         var endDate = $('#filter_end_date').val();
@@ -74,6 +75,7 @@ jQuery(document).ready(function($) {
             type: 'POST',
             data: {
                 action: 'signup_calendar_fetch_filtered_events',
+                search: search,
                 category: category,
                 start_date: startDate,
                 end_date: endDate,
@@ -98,6 +100,7 @@ jQuery(document).ready(function($) {
     
     // Reset filters button
     $('#reset-filters-btn').on('click', function() {
+        $('#filter_search').val('');
         $('#filter_category').val('');
         $('#filter_start_date').val('');
         $('#filter_end_date').val('');
