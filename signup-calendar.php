@@ -20,6 +20,19 @@ define('SIGNUP_CALENDAR_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('SIGNUP_CALENDAR_PLUGIN_URL', plugin_dir_url(__FILE__));
 
 /**
+ * Get cache-busting asset version from file modification time.
+ */
+function signup_calendar_asset_version($relative_path) {
+    $file_path = SIGNUP_CALENDAR_PLUGIN_DIR . ltrim($relative_path, '/');
+
+    if (file_exists($file_path)) {
+        return filemtime($file_path);
+    }
+
+    return SIGNUP_CALENDAR_VERSION;
+}
+
+/**
  * Initialize the plugin
  */
 function signup_calendar_init() {
@@ -39,14 +52,14 @@ function signup_calendar_render_block($attributes) {
         'signup-calendar-frontend',
         SIGNUP_CALENDAR_PLUGIN_URL . 'build/style-index.css',
         array(),
-        SIGNUP_CALENDAR_VERSION
+        signup_calendar_asset_version('build/style-index.css')
     );
     
     wp_enqueue_script(
         'signup-calendar-frontend',
         SIGNUP_CALENDAR_PLUGIN_URL . 'js/calendar-frontend.js',
         array('jquery'),
-        SIGNUP_CALENDAR_VERSION,
+        signup_calendar_asset_version('js/calendar-frontend.js'),
         true
     );
     
@@ -78,7 +91,7 @@ function signup_calendar_enqueue_block_editor_assets() {
         'signup-calendar-editor',
         SIGNUP_CALENDAR_PLUGIN_URL . 'build/index.js',
         array('wp-blocks', 'wp-element', 'wp-editor', 'wp-components', 'wp-i18n'),
-        SIGNUP_CALENDAR_VERSION,
+        signup_calendar_asset_version('build/index.js'),
         true
     );
 
@@ -86,7 +99,7 @@ function signup_calendar_enqueue_block_editor_assets() {
         'signup-calendar-editor',
         SIGNUP_CALENDAR_PLUGIN_URL . 'build/style-index.css',
         array('wp-edit-blocks'),
-        SIGNUP_CALENDAR_VERSION
+        signup_calendar_asset_version('build/style-index.css')
     );
 }
 add_action('enqueue_block_editor_assets', 'signup_calendar_enqueue_block_editor_assets');
@@ -227,14 +240,14 @@ function signup_calendar_admin_assets($hook) {
         'signup-calendar-admin',
         SIGNUP_CALENDAR_PLUGIN_URL . 'css/admin-style.css',
         array(),
-        SIGNUP_CALENDAR_VERSION
+        signup_calendar_asset_version('css/admin-style.css')
     );
     
     wp_enqueue_script(
         'signup-calendar-admin',
         SIGNUP_CALENDAR_PLUGIN_URL . 'js/admin-events.js',
         array('jquery', 'jquery-ui-datepicker'),
-        SIGNUP_CALENDAR_VERSION,
+        signup_calendar_asset_version('js/admin-events.js'),
         true
     );
     

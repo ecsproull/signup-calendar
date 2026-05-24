@@ -34,6 +34,30 @@ jQuery(document).ready(function($) {
             return {};
         });
     }
+
+    /**
+     * Load and merge events for all months in a date range (inclusive)
+     */
+    function loadEventsForDateRange(startDate, endDate, viewType) {
+        var cursor = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
+        var endMonth = new Date(endDate.getFullYear(), endDate.getMonth(), 1);
+        var requests = [];
+
+        while (cursor <= endMonth) {
+            requests.push(loadEvents(cursor.getFullYear(), cursor.getMonth() + 1, viewType));
+            cursor.setMonth(cursor.getMonth() + 1);
+        }
+
+        return Promise.all(requests).then(function(monthResults) {
+            var merged = {};
+
+            $.each(monthResults, function(index, monthData) {
+                $.extend(merged, monthData || {});
+            });
+
+            return merged;
+        });
+    }
     
     /**
      * Format event list HTML
@@ -90,8 +114,8 @@ jQuery(document).ready(function($) {
         
         var today = new Date().toDateString();
         
-        // Load events for the month
-        loadEvents(firstDay.getFullYear(), firstDay.getMonth() + 1, 'week').then(function(eventsData) {
+        // Load events for every month touched by this week
+        loadEventsForDateRange(firstDay, lastDay, 'week').then(function(eventsData) {
             var html = '<div class="signup-calendar-container week-view">' +
             '<div class="full-calendar-link"><a href="/club-event-calendar">Full Calendar</a></div>' +
                 '<div class="calendar-header">' +
